@@ -175,7 +175,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         // 标记关闭
         this.shutdown = true;
         // 清空缓存
-        this.queue.clear();-
+        this.queue.clear();
     }
     
     public boolean isInitialized() {

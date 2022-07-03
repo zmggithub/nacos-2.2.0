@@ -358,15 +358,17 @@ public class NotifyCenter {
     
     /**
      * Request publisher publish event Publishers load lazily, calling publisher.
-     *
+     * 发布事件 发布事件的本质就是不同类型的发布者来调用内部维护的订阅者的onEvent()方法。
      * @param eventType class Instances type of the event type.
      * @param event     event instance.
      */
     private static boolean publishEvent(final Class<? extends Event> eventType, final Event event) {
+        // 慢事件处理
         if (ClassUtils.isAssignableFrom(SlowEvent.class, eventType)) {
             return INSTANCE.sharePublisher.publish(event);
         }
-        
+
+        // 常规事件处理
         final String topic = ClassUtils.getCanonicalName(eventType);
         
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);

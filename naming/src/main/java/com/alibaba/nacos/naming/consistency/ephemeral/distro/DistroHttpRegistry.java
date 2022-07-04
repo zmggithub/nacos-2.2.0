@@ -40,6 +40,7 @@ public class DistroHttpRegistry {
 
     // 一些Distro组件的集合
     private final DistroComponentHolder componentHolder;
+
     // 一些任务执行引擎的集合
     private final DistroTaskEngineHolder taskEngineHolder;
     

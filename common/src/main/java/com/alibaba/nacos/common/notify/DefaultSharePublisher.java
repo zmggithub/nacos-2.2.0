@@ -46,13 +46,16 @@ public class DefaultSharePublisher extends DefaultPublisher implements ShardedEv
      * Set newSet = new ConcurrentHashSet(); 它这里实际上使用的是自己实现的ConcurrentHashSet，它内部使用了ConcurrentHashMap来实现存储。
      * 在ConcurrentHashSet.add()方法的实现上，它以当前插入的Subscriber对象为key，以一个Boolean值占位：map.putIfAbsent(o, Boolean.TRUE)。
      *
-     * 事件类型和订阅者的存储状态为：
-     * EventType1 -> {Subscriber1, Subscriber2, Subscriber3...}
-     * EventType2 -> {Subscriber1, Subscriber2, Subscriber3...}
-     * EventType3 -> {Subscriber1, Subscriber2, Subscriber3...}
-     * 感兴趣的可以自己查阅一下源码。
-      */
-
+     * <p>事件类型和订阅者的存储状态为：
+     *
+     * <p>EventType1 -> {Subscriber1, Subscriber2, Subscriber3...}
+     *
+     * <p>EventType2 -> {Subscriber1, Subscriber2, Subscriber3...}
+     *
+     * <p>EventType3 -> {Subscriber1, Subscriber2, Subscriber3...}
+     *
+     * <p>感兴趣的可以自己查阅一下源码。
+     */
     @Override
     public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
 
@@ -113,7 +116,8 @@ public class DefaultSharePublisher extends DefaultPublisher implements ShardedEv
 
     /**
      * 接收事件
-     * DefaultPublisher是一个发布器只负责发布一个事件，并通知订阅了这个事件的所有订阅者；DefaultSharePublisher则是一个发布器可以发布多个事件，并通知订阅了这个事件的所有订阅者。
+     * DefaultPublisher是一个发布器只负责发布一个事件，并通知订阅了这个事件的所有订阅者；
+     * DefaultSharePublisher则是一个发布器可以发布多个事件，并通知订阅了这个事件的所有订阅者.
      */
     @Override
     public void receiveEvent(Event event) {

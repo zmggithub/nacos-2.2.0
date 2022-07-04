@@ -47,6 +47,7 @@ import static com.alibaba.nacos.common.notify.NotifyCenter.ringBufferSize;
 public class DefaultPublisher extends Thread implements EventPublisher {
     
     protected static final Logger LOGGER = LoggerFactory.getLogger(NotifyCenter.class);
+
     // 发布者是否初始化完毕
     private volatile boolean initialized = false;
 
@@ -90,9 +91,9 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     /**
      * 在初始化方法中，将其设置为了守护线程，意味着它将持续运行（它需要持续监控内部的事件队列），
      * 传入的type属性为当前发布者需要处理的事件类型，设置当前线程的名称以事件类型为区分，
-     * 它将会以多个线程的形式存在，每个线程代表一种事件类型的发布者,后面初始化了队列的长度。
-     * 最后调用启动方法完成当前线程的启动。
-     * 直接调用了Thread的start方法开启守护线程，并设置初始化状态为true。根据java线程的启动方式，调用start方法之后start方法是会调用run方法的。
+     * 它将会以多个线程的形式存在，每个线程代表一种事件类型的发布者,后面初始化了队列的长度.
+     * 最后调用启动方法完成当前线程的启动.
+     * 直接调用了Thread的start方法开启守护线程，并设置初始化状态为true。根据java线程的启动方式，调用start方法之后start方法是会调用run方法的.
      */
     @Override
     public synchronized void start() {
@@ -112,8 +113,8 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     }
 
     /**
-     * 在run方法中调用了openEventHandler()方法。那发布者的实际工作原理就存在于这个方法内部。
-     * 在首次启动的时候会等待1分钟，然后再进行消息消费。
+     * 在run方法中调用了openEventHandler()方法。那发布者的实际工作原理就存在于这个方法内部.
+     * 在首次启动的时候会等待1分钟，然后再进行消息消费.
      */
     @Override
     public void run() {
@@ -184,7 +185,6 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     
     /**
      * Receive and notifySubscriber to process the event.
-     *
      * 这里的接收事件指的是接收通知中心发过来的事件，发布给订阅者。
      * @param event {@link Event}.
      */
@@ -238,7 +238,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     /**
      * 外部调用发布事件
      * 前面的发布事件是指从队列内部获取事件并通知订阅者
-     *  这里的发布事件区别在于它是开放给外部调用者，接收统一通知中心的事件并放入队列中的。
+     *  这里的发布事件区别在于它是开放给外部调用者，接收统一通知中心的事件并放入队列中的.
      */
     @Override
     public boolean publish(Event event) {

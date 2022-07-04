@@ -47,7 +47,8 @@ import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
  *
  * 提示：单事件发布者容器内的存储状态为： 事件类型的完整限定名 -> DefaultPublisher.
  * 例如：
- * com.alibaba.nacos.core.cluster.MembersChangeEvent -> {DefaultPublisher@6839} "Thread[nacos.publisher-com.alibaba.nacos.core.cluster.MembersChangeEvent,5,main]"
+ * com.alibaba.nacos.core.cluster.MembersChangeEvent
+ *  -> {DefaultPublisher@6839} "Thread[nacos.publisher-com.alibaba.nacos.core.cluster.MembersChangeEvent,5,main]"
  * zmg@2022-07-03
  */
 public class NotifyCenter {
@@ -82,7 +83,7 @@ public class NotifyCenter {
      */
     private final Map<String, EventPublisher> publisherMap = new ConcurrentHashMap<>(16);
 
-    /**
+    /*
      * 初始化信息
      * 可以看到它初始化了一个通知中心的实例，这里是单例模式。定义了发布者。
      * 订阅者是保存在发布者的内部，而发布者又保存在通知者的内部。这样就组成了一套完整的事件发布机制。
@@ -115,7 +116,7 @@ public class NotifyCenter {
             clazz = DefaultPublisher.class;
         }
 
-        /**
+        /*
          * 声明发布者工厂为一个函数，用于创建发布者实例
          * @Override apply
          * 为指定类型的事件创建一个单事件发布者对象
@@ -260,7 +261,7 @@ public class NotifyCenter {
         final String topic = ClassUtils.getCanonicalName(subscribeType);
         synchronized (NotifyCenter.class) {
             // MapUtils.computeIfAbsent is a unsafe method.
-            /**
+            /*
              * 生成指定类型的发布者，并将其放入publisherMap中
              * 使用topic为key从publisherMap获取数据，若为空则使用publisherFactory函数并传递subscribeType和ringBufferSize来实例
              * 化一个clazz类型的发布者对象，使用topic为key放入publisherMap中，实际上就是为每一个类型的事件创建一个发布者。具体
@@ -399,8 +400,7 @@ public class NotifyCenter {
         return registerToPublisher(eventType, DEFAULT_PUBLISHER_FACTORY, queueMaxSize);
     }
 
-
-    /**
+    /*
      *  注册发布者
      * 实际上并没有直接的注册发布者这个概念，通过前面的章节你肯定知道发布者就两种类型：单事件发布者、多事件发布者。单事件发布者直接就一个实例，多事件发布者会根据事件类型创建不同的实例，存储于publisherMap中。它已经在通知中心了，因此并不需要有刻意的注册动作。需要使用的时候
      * 直接取即可。

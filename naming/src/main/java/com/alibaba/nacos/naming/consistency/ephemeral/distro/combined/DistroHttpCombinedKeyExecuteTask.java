@@ -51,14 +51,23 @@ public class DistroHttpCombinedKeyExecuteTask extends AbstractExecuteTask {
         this.singleDistroKey = singleDistroKey;
         this.taskAction = taskAction;
     }
-    
+
+    /**
+     * 这里又封装了一个DistroHttpCombinedKeyDelayTask任务，然后这里设置延迟时间也是1s，
+     * 最后把任务交给延迟任务执行引擎，这里会走merge任务的逻辑，在NacosDelayTaskExecuteEngine有个延迟任务，100ms执行一次，
+     * 因为任务的延迟时间是1s，到第10次的时候会将task取出来，根据这个任务获取processor，
+     * 获取不到默认是DistroDelayTaskProcessor，所以会调用DistroDelayTaskProcessor#process方法.
+     */
+
     @Override
     public void run() {
         try {
             DistroKey newKey = new DistroKey(DistroHttpCombinedKey.getSequenceKey(),
                     DistroHttpCombinedKeyDelayTask.class.getSimpleName(), singleDistroKey.getTargetServer());
+
             DistroHttpCombinedKeyDelayTask combinedTask = new DistroHttpCombinedKeyDelayTask(newKey, taskAction,
                     DistroConfig.getInstance().getSyncDelayMillis(), globalConfig.getBatchSyncKeyCount());
+
             combinedTask.getActualResourceKeys().add(singleDistroKey.getResourceKey());
             distroDelayTaskExecuteEngine.addTask(newKey, combinedTask);
         } catch (Exception e) {

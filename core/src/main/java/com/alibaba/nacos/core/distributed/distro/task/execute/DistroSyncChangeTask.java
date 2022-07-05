@@ -25,6 +25,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 
 /**
  * Distro sync change task.
+ * 这个就是父类中的模版，做一些容错的处理，真正执行的时候会调用doExecute方法 {@link AbstractDistroExecuteTask.run}
  *
  * @author xiweng.yy
  */
@@ -40,15 +41,21 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
     protected DataOperation getDataOperation() {
         return OPERATION;
     }
-    
+
     @Override
     protected boolean doExecute() {
+
+        // AbstractDistroExecuteTask.run 调用的时候会调用到这里
         String type = getDistroKey().getResourceType();
+
+        // 获取到真实要同步的数据,，然后获取同步组件，调用syncData来发送同步数据，不过这个数据是被序列化的了
         DistroData distroData = getDistroData(type);
         if (null == distroData) {
             Loggers.DISTRO.warn("[DISTRO] {} with null data to sync, skip", toString());
             return true;
         }
+
+        // findTransportAgent获取同步组件，syncData进行发送数据
         return getDistroComponentHolder().findTransportAgent(type)
                 .syncData(distroData, getDistroKey().getTargetServer());
     }

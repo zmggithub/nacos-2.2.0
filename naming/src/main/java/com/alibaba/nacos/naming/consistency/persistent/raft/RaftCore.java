@@ -78,6 +78,9 @@ import java.util.zip.GZIPOutputStream;
 
 /**
  * Raft core code.
+ * 永久节点集群间同步.
+ * 在之前的版本nacos同步采用的是自研的raft协议，2.0.0版本之后采用JRaft，这里我们还是基于之前的Raft看.
+ * zmg@2022-07-04
  *
  * @author nacos
  * @deprecated will remove in 1.4.x
@@ -152,6 +155,7 @@ public class RaftCore implements Closeable {
     
     /**
      * Init raft core.
+     * 首先从本地文件加载数据到内存中,然后注册了一个选举任务500ms执行一次,注册了一个心跳任务500ms执行一次.
      *
      * @throws Exception any exception during init
      */
@@ -159,9 +163,11 @@ public class RaftCore implements Closeable {
     public void init() throws Exception {
         Loggers.RAFT.info("initializing Raft sub-system");
         final long start = System.currentTimeMillis();
-        
+
+        // 加载数据
         raftStore.loadDatums(notifier, datums);
-        
+
+        // 加载nacos_home/data/nameing/data/meta.properties这个term
         setTerm(NumberUtils.toLong(raftStore.loadMeta().getProperty("term"), 0L));
         
         Loggers.RAFT.info("cache loaded, datum count: {}, current term: {}", datums.size(), peers.getTerm());
@@ -169,10 +175,14 @@ public class RaftCore implements Closeable {
         initialized = true;
         
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
-        
+
+        // 注册一个选举任务，500ms执行一次，看下选举任务的run方法
         masterTask = GlobalExecutor.registerMasterElection(new MasterElection());
+
+        // 注册一个心跳任务，也是500ms执行一次
         heartbeatTask = GlobalExecutor.registerHeartbeat(new HeartBeat());
-        
+
+        // 同版本切换注册一个观察者，如果切换了新版本，就会停止这个 core
         versionJudgement.registerObserver(isAllNewVersion -> {
             stopWork = isAllNewVersion;
             if (stopWork) {
@@ -184,7 +194,8 @@ public class RaftCore implements Closeable {
                 }
             }
         }, 100);
-        
+
+        // 这是一个监听器订阅者
         NotifyCenter.registerSubscriber(notifier);
         
         Loggers.RAFT.info("timer started: leader timeout ms: {}, heart-beat timeout ms: {}",
@@ -197,6 +208,10 @@ public class RaftCore implements Closeable {
     
     /**
      * Signal publish new record. If not leader, signal to leader. If leader, try to commit publish.
+     * 判断不是leader的话则会把请求转发给leader
+     * 如果是leader，则先进行加锁，然后调用onPublish方法进行本地存储。
+     * 通过给所有的fellower节点，这里用了这里用了CountDownLatch，阻塞等过半的节点成功就返回。最大等待5s，如果5s还没同步到过半节点，就抛出异常，释放锁资源。
+     * 这里就会导致节点间的数据不一致了。所以它并不是强一致的，而是实现成最终一致的。
      *
      * @param key   key
      * @param value value
@@ -206,6 +221,8 @@ public class RaftCore implements Closeable {
         if (stopWork) {
             throw new IllegalStateException("old raft protocol already stop work");
         }
+
+        // 不是leader的话
         if (!isLeader()) {
             ObjectNode params = JacksonUtils.createEmptyJsonNode();
             params.put("key", key);
@@ -214,29 +231,41 @@ public class RaftCore implements Closeable {
             parameters.put("key", key);
             
             final RaftPeer leader = getLeader();
-            
+
+            // 发送给leader /raft/datum post 请求
             raftProxy.proxyPostLarge(leader.ip, API_PUB, params.toString(), parameters);
             return;
         }
-        
+
+        // 是leader
         OPERATE_LOCK.lock();
         try {
             final long start = System.currentTimeMillis();
             final Datum datum = new Datum();
             datum.key = key;
             datum.value = value;
+
+            // 原来没有
             if (getDatum(key) == null) {
                 datum.timestamp.set(1L);
             } else {
+
+                // 有的话 timestamp + 1
                 datum.timestamp.set(getDatum(key).timestamp.incrementAndGet());
             }
             
             ObjectNode json = JacksonUtils.createEmptyJsonNode();
+            // 数据
             json.replace("datum", JacksonUtils.transferToJsonNode(datum));
+            // 来源
             json.replace("source", JacksonUtils.transferToJsonNode(peers.local()));
-            
+
+            // 本地存储
+            // 这里有2个重要的点，一个是更新数据里面的timestamp值，就是自增1，这个timestamp值很重要，相当于是个版本
+            // 接着调用onPublish方法进行本地存储。
             onPublish(datum, peers.local());
-            
+
+            // 将内容同步给所有的FOLLOWER节点
             final String content = json.toString();
             
             final CountDownLatch latch = new CountDownLatch(peers.majorityCount());
@@ -348,6 +377,11 @@ public class RaftCore implements Closeable {
     
     /**
      * Do publish. If leader, commit publish to store. If not leader, stop publish because should signal to leader.
+     * 最终一致性的Raft协议
+     * 它实现最终一致性，就是leader在发送心跳的时候会将这个数据的key与timestamp(也相当于版本号)
+     * 带给follower节点，然后follower节点收到leader 发过来的心跳，会将本地的key ，timestamp
+     * 与leader带过来的key，timestamp 进行比较，如果本地少了这个key ，或者是key对应的timestamp
+     * 低于leader的话，就会发送请求去leader那拉取不一致的数据.
      *
      * @param datum  datum
      * @param source source raft peer
@@ -467,7 +501,11 @@ public class RaftCore implements Closeable {
         Loggers.RAFT.warn("clean old cache datum for old raft");
         datums.clear();
     }
-    
+
+    /**
+     * 这里获取自己的节点信息，拿自己的leaderDueMs减去500，这个一开始是0～15000的随机数，
+     * 只有减到负数才进行选举，如果减到负数了，则重置leaderDueMs和heartbeatDueMs，然后就是向其他节点发送选票.
+     */
     public class MasterElection implements Runnable {
         
         @Override
@@ -476,45 +514,68 @@ public class RaftCore implements Closeable {
                 if (stopWork) {
                     return;
                 }
+
+                // 判断是否准备好了
                 if (!peers.isReady()) {
                     return;
                 }
-                
+
+                // 获取自己的peer -500
                 RaftPeer local = peers.local();
                 local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS;
-                
+
+                // 大于0就什么也不干，早晚有减到小于0的时候
                 if (local.leaderDueMs > 0) {
                     return;
                 }
                 
-                // reset timeout
+                // reset timeout 重置leaderDue 15000+ 0到5000的随机数
                 local.resetLeaderDue();
+
+                // 重置HeartBeatDue
                 local.resetHeartbeatDue();
-                
+
+                // 发送选票
                 sendVote();
             } catch (Exception e) {
                 Loggers.RAFT.warn("[RAFT] error while master election {}", e);
             }
             
         }
-        
+
+        /**
+         * 获取自己的peer，然后重置所有的选票信息，把自己的term++，然后投给自己一票，把自己的状态改成候选人状态。
+         * 向其他的节点发送拉票信息。节点收到其他节点的选票信息是在RaftCore#receivedVote方法中处理的.
+         */
         private void sendVote() {
-            
+
+            // 获取本机的peer
             RaftPeer local = peers.get(NetUtils.localServer());
             Loggers.RAFT.info("leader timeout, start voting,leader: {}, term: {}", JacksonUtils.toJson(getLeader()),
                     local.term);
-            
+
+            // 将所有的voteFor都设置为null, 这个voteFor就是将投给了谁
             peers.reset();
-            
+
+            // term++ 这个东西还是比较重要的，如果没有这个东西的话，大家都一样，就选不出来了，反正就选那个term比自己大的那个
             local.term.incrementAndGet();
+
+            // 先投票给自己
             local.voteFor = local.ip;
+
+            // 转变角色为候选人
             local.state = RaftPeer.State.CANDIDATE;
             
             Map<String, String> params = new HashMap<>(1);
+            // 封装参数，将自己扔过去了
             params.put("vote", JacksonUtils.toJson(local));
+
+            // 遍历那堆抛去自己的server
             for (final String server : peers.allServersWithoutMySelf()) {
                 final String url = buildUrl(server, API_VOTE);
                 try {
+
+                    // v1发送http请求？v2还是这样么？
                     HttpClient.asyncHttpPost(url, null, params, new Callback<String>() {
                         @Override
                         public void onReceive(RestResult<String> result) {
@@ -526,7 +587,8 @@ public class RaftCore implements Closeable {
                             RaftPeer peer = JacksonUtils.toObj(result.getData(), RaftPeer.class);
                             
                             Loggers.RAFT.info("received approve from peer: {}", JacksonUtils.toJson(peer));
-                            
+
+                            // 拉标方收到对方的投票结果
                             peers.decideLeader(peer);
                             
                         }
@@ -550,7 +612,7 @@ public class RaftCore implements Closeable {
     
     /**
      * Received vote.
-     *
+     * 这里就是对比term的大小，如果term小于对方则投票给对方，如果term大于对方，则把选票设置为自己，返回给拉票房.
      * @param remote remote raft peer of vote information
      * @return self-peer information
      */
@@ -561,21 +623,28 @@ public class RaftCore implements Closeable {
         if (!peers.contains(remote)) {
             throw new IllegalStateException("can not find peer: " + remote.ip);
         }
-        
+
+        // 获取本机的peer
         RaftPeer local = peers.get(NetUtils.localServer());
+
+        // 如果远端的peer的term小于等于自己的这个peer的term的话
         if (remote.term.get() <= local.term.get()) {
             String msg = "received illegitimate vote" + ", voter-term:" + remote.term + ", votee-term:" + local.term;
             
             Loggers.RAFT.info(msg);
+
+            // 如果voteFor是null,就设置为自己返回
             if (StringUtils.isEmpty(local.voteFor)) {
                 local.voteFor = local.ip;
             }
             
             return local;
         }
-        
+
+        // 重置leaderDue
         local.resetLeaderDue();
-        
+
+        // 改变状态，投票给这个ip
         local.state = RaftPeer.State.FOLLOWER;
         local.voteFor = remote.ip;
         local.term.set(remote.term.get());
@@ -584,7 +653,13 @@ public class RaftCore implements Closeable {
         
         return local;
     }
-    
+
+    /**
+     * 心跳任务
+     * 和选举任务差不多，也是对一个随机数做减法，减到0就可以继续往下走，发送心跳了。
+     * zmg@2022-07-04.
+     *
+     */
     public class HeartBeat implements Runnable {
         
         @Override
@@ -604,23 +679,31 @@ public class RaftCore implements Closeable {
                 }
                 
                 local.resetHeartbeatDue();
-                
+
+                // 发送心跳
                 sendBeat();
             } catch (Exception e) {
                 Loggers.RAFT.warn("[RAFT] error while sending beat {}", e);
             }
             
         }
-        
+
+        /**
+         * 这里只有leader节点才能发送心跳，这里就是压缩数据，向所有的follwer节点发送心跳.
+         *
+         */
         private void sendBeat() throws IOException, InterruptedException {
             RaftPeer local = peers.local();
+
+            // 如果不是集群模式或者自己不是leader就不往下执行了
             if (EnvUtil.getStandaloneMode() || local.state != RaftPeer.State.LEADER) {
                 return;
             }
             if (Loggers.RAFT.isDebugEnabled()) {
                 Loggers.RAFT.debug("[RAFT] send beat with {} keys.", datums.size());
             }
-            
+
+            // 重置LeaderDue
             local.resetLeaderDue();
             
             // build data
@@ -632,7 +715,8 @@ public class RaftCore implements Closeable {
             if (switchDomain.isSendBeatOnly()) {
                 Loggers.RAFT.info("[SEND-BEAT-ONLY] {}", switchDomain.isSendBeatOnly());
             }
-            
+
+            // 不仅要发送心跳，还要带着数据的话，默认是false，也就是还得带着数据
             if (!switchDomain.isSendBeatOnly()) {
                 for (Datum datum : datums.values()) {
                     
@@ -660,7 +744,9 @@ public class RaftCore implements Closeable {
             GZIPOutputStream gzip = new GZIPOutputStream(out);
             gzip.write(content.getBytes(StandardCharsets.UTF_8));
             gzip.close();
-            
+
+            // 下面这一在堆就是压缩数据，下面的for循环就是向所有的节点发送心跳（抛去自己），收到回应后更新peer.
+            // 我们再来看看follower节点是怎样处理心跳的
             byte[] compressedBytes = out.toByteArray();
             String compressedContent = new String(compressedBytes, StandardCharsets.UTF_8);
             
@@ -675,6 +761,8 @@ public class RaftCore implements Closeable {
                     if (Loggers.RAFT.isDebugEnabled()) {
                         Loggers.RAFT.debug("send beat to server " + server);
                     }
+
+                    // v1 http ? v2 ? zmg
                     HttpClient.asyncHttpPostLarge(url, null, compressedBytes, new Callback<String>() {
                         @Override
                         public void onReceive(RestResult<String> result) {
@@ -713,6 +801,10 @@ public class RaftCore implements Closeable {
     
     /**
      * Received beat from leader. // TODO split method to multiple smaller method.
+     * Fellower节点接到心跳逻辑
+     * 首先比较term的大小，如果当前term比leader大则抛出异常，因为leader的版本是落后的.
+     * 重置本地的leaderDueMs和heartbeatDueMs，如果leader一直正常维持心跳，那么fellower是不会进行选举的.
+     * 会调用makeLeader方法，这个主要是看本地维护的leader和远程的leader是不是同一个，如果不是则进行更新.
      *
      * @param beat beat information from leader
      * @return self-peer information
@@ -731,13 +823,15 @@ public class RaftCore implements Closeable {
         remote.heartbeatDueMs = peer.get("heartbeatDueMs").asLong();
         remote.leaderDueMs = peer.get("leaderDueMs").asLong();
         remote.voteFor = peer.get("voteFor").asText();
-        
+
+        // 远端的不是leader的话，抛出异常
         if (remote.state != RaftPeer.State.LEADER) {
             Loggers.RAFT.info("[RAFT] invalid state from master, state: {}, remote peer: {}", remote.state,
                     JacksonUtils.toJson(remote));
             throw new IllegalArgumentException("invalid state from master, state: " + remote.state);
         }
-        
+
+        // 本地的term大于远端的也不行
         if (local.term.get() > remote.term.get()) {
             Loggers.RAFT
                     .info("[RAFT] out of date beat, beat-from-term: {}, beat-to-term: {}, remote peer: {}, and leaderDueMs: {}",
@@ -745,7 +839,8 @@ public class RaftCore implements Closeable {
             throw new IllegalArgumentException(
                     "out of date beat, beat-from-term: " + remote.term.get() + ", beat-to-term: " + local.term.get());
         }
-        
+
+        // 本地的如果不是FOLLOWER角色的话，设置成FOLLOWER
         if (local.state != RaftPeer.State.FOLLOWER) {
             
             Loggers.RAFT.info("[RAFT] make remote as leader, remote peer: {}", JacksonUtils.toJson(remote));
@@ -821,7 +916,7 @@ public class RaftCore implements Closeable {
                                     + ", datums' size is {}, RaftCore.datums' size is {}", getLeader().ip, batch.size(),
                             processedCount, beatDatums.size(), datums.size());
                     
-                    // update datum entry
+                    //todo update datum entry 这里http调用 "/raft/datum"
                     String url = buildUrl(remote.ip, API_GET);
                     Map<String, String> queryParam = new HashMap<>(1);
                     queryParam.put("keys", URLEncoder.encode(keys, "UTF-8"));

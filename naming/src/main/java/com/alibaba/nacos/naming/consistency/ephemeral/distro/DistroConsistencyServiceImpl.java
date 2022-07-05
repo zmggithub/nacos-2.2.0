@@ -108,11 +108,15 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     @Override
     public void put(String key, Record value) throws NacosException {
+
+        // 往本地里面存储+内存队列
         onPut(key, value);
         // If upgrade to 2.0.X, do not sync for v1.
         if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
             return;
         }
+
+        // 集群间同步 临时节点集群间同步
         distroProtocol.sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), DataOperation.CHANGE,
                 DistroConfig.getInstance().getSyncDelayMillis());
     }
@@ -298,8 +302,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     @Override
     public boolean processData(DistroData distroData) {
+        // 首先对数据进行反序列化
+
         DistroHttpData distroHttpData = (DistroHttpData) distroData;
         Datum<Instances> datum = (Datum<Instances>) distroHttpData.getDeserializedContent();
+
+        // 调用onPut方法，这个方法之前分析过会将数据存入DataStore，并且将事件变更放入内存队列中。
+        // 然后会有线程从队列中取任务处理，然后把数据更新到注册表中。
         onPut(datum.key, datum.value);
         return true;
     }

@@ -83,6 +83,10 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     
     @Override
     public void put(String key, Record value) throws NacosException {
+
+        // 当服务注册到nacos中，他会调用consistencyService#put方法，把注册信息同步到集群其他节点，
+        // 对于永久节点consistencyService的实现有两个，
+        // 1.4版本之前是RaftConsistencyServiceImpl，之后是PersistentServiceProcessor。我们这次介绍RaftConsistencyServiceImpl
         checkIsStopWork();
         try {
             raftCore.signalPublish(key, value);

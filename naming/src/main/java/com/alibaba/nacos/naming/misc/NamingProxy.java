@@ -152,6 +152,7 @@ public class NamingProxy {
     
     /**
      * Synchronize datum to target server.
+     * 这里就是向集群其他节点发送同步数据。请求的接口是distro/datum，对应服务端的接口DistroController#onSyncDatum.
      *
      * @param data      datum
      * @param curServer target server address
@@ -159,7 +160,8 @@ public class NamingProxy {
      */
     public static boolean syncData(byte[] data, String curServer) {
         Map<String, String> headers = new HashMap<>(128);
-        
+
+        // 封装请求头
         headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
         headers.put(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
         headers.put(HttpHeaderConsts.ACCEPT_ENCODING, "gzip,deflate,sdch");
@@ -167,6 +169,8 @@ public class NamingProxy {
         headers.put(HttpHeaderConsts.CONTENT_ENCODING, "gzip");
         
         try {
+
+            // 这里调用/nacos/v1/ns/distro/datum
             RestResult<String> result = HttpClient.httpPutLarge(
                     "http://" + curServer + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                             + DATA_ON_SYNC_URL, headers, data);

@@ -235,6 +235,7 @@ public class NacosNamingService implements NamingService {
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
             return new ArrayList<Instance>();
         }
+
         return list;
     }
     

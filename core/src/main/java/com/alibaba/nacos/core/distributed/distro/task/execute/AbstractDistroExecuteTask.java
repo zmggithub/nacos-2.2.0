@@ -71,11 +71,15 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
         try {
             boolean result = doExecute();
             if (!result) {
+
+                // 如果失败，处理失败的task
                 handleFailedTask();
             }
             Loggers.DISTRO.info("[DISTRO-END] {} result: {}", toString(), result);
         } catch (Exception e) {
             Loggers.DISTRO.warn("[DISTRO] Sync data change failed.", e);
+
+            // 如果失败，处理失败的task
             handleFailedTask();
         }
     }

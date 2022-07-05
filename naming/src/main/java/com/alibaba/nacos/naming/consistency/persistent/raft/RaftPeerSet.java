@@ -177,16 +177,20 @@ public class RaftPeerSet extends MemberChangeListener implements Closeable {
     
     /**
      * Calculate and decide which peer is leader. If has new peer has more than half vote, change leader to new peer.
+     * 拉票方收到对方的投票结果会调用decideLeader方法
+     * 这里就是判断所有节点收到的选票的数量，如果有节点到达半数以上，则选举那个节点为leader，如果本机为leader，则会发布leader选举事件.
      *
      * @param candidate new candidate
      * @return new leader if new candidate has more than half vote, otherwise old leader
      */
     public RaftPeer decideLeader(RaftPeer candidate) {
         peers.put(candidate.ip, candidate);
-        
+
+        // 统计出现次数的一个bag
         SortedBag ips = new TreeBag();
-        int maxApproveCount = 0;
-        String maxApprovePeer = null;
+
+        int maxApproveCount = 0; // 最多票
+        String maxApprovePeer = null; // 最多票的peer
         for (RaftPeer peer : peers.values()) {
             if (StringUtils.isEmpty(peer.voteFor)) {
                 continue;
@@ -198,13 +202,19 @@ public class RaftPeerSet extends MemberChangeListener implements Closeable {
                 maxApprovePeer = peer.voteFor;
             }
         }
-        
+
+        // 如果超过半数+1的话
         if (maxApproveCount >= majorityCount()) {
+
+            // 获取最大票数的peer，修改状态为leader
             RaftPeer peer = peers.get(maxApprovePeer);
             peer.state = RaftPeer.State.LEADER;
-            
+
+            // 如果leader不是选出来的那个peer，就把leader设置为选出来的那个peer
             if (!Objects.equals(leader, peer)) {
                 leader = peer;
+
+                // 发布leader选举完成的事件
                 ApplicationUtils.publishEvent(new LeaderElectFinishedEvent(this, leader, local()));
                 Loggers.RAFT.info("{} has become the LEADER", leader.ip);
             }

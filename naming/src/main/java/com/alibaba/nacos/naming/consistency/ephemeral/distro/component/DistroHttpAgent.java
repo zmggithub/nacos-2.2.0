@@ -49,10 +49,16 @@ public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
     public boolean syncData(DistroData data, String targetServer) {
+
+        // 校验目标服务器是存在列表中
         if (!memberManager.hasMember(targetServer)) {
             return true;
         }
+
+        // 发送数据
         byte[] dataContent = data.getContent();
+
+        // 同步数据
         return NamingProxy.syncData(dataContent, data.getDistroKey().getTargetServer());
     }
     

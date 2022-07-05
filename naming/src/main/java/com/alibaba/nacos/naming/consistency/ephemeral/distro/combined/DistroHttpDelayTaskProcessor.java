@@ -48,13 +48,17 @@ public class DistroHttpDelayTaskProcessor implements NacosTaskProcessor {
         this.globalConfig = globalConfig;
         this.distroTaskEngineHolder = distroTaskEngineHolder;
     }
-    
+
     @Override
     public boolean process(NacosTask task) {
         DistroDelayTask distroDelayTask = (DistroDelayTask) task;
         DistroKey distroKey = distroDelayTask.getDistroKey();
+
+        // 封装了一层
         DistroHttpCombinedKeyExecuteTask executeTask = new DistroHttpCombinedKeyExecuteTask(globalConfig,
                 distroTaskEngineHolder.getDelayTaskExecuteEngine(), distroKey, distroDelayTask.getAction());
+
+        // 然后将这个task交给了任务执行引擎处理
         distroTaskEngineHolder.getExecuteWorkersManager().addTask(distroKey, executeTask);
         return true;
     }

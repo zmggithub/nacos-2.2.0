@@ -58,19 +58,32 @@ public class NacosExecuteTaskExecuteEngine extends AbstractNacosTaskExecuteEngin
     public boolean isEmpty() {
         return 0 == size();
     }
-    
+
+    /**
+     * 这里根据任务获取processor，这里没有处理这个任务的processor，
+     * 所以会通过hash的方式获取一个TaskExecuteWorker，然后调用其processor方法.
+     *
+     */
     @Override
     public void addTask(Object tag, AbstractExecuteTask task) {
+
+        // 获取processor
         NacosTaskProcessor processor = getProcessor(tag);
         if (null != processor) {
             processor.process(task);
             return;
         }
+
+        // 通过hash 取模的方式获取worker
         TaskExecuteWorker worker = getWorker(tag);
+
+        // 使用worker执行
         worker.process(task);
     }
     
     private TaskExecuteWorker getWorker(Object tag) {
+
+        // hash % 的方式选择哪个worker执行
         int idx = (tag.hashCode() & Integer.MAX_VALUE) % workersCount();
         return executeWorkers[idx];
     }

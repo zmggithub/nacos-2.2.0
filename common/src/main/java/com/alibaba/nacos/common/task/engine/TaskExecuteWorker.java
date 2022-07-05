@@ -63,9 +63,11 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
     public String getName() {
         return name;
     }
-    
+
     @Override
     public boolean process(NacosTask task) {
+
+        // 这里会把任务put到一个队列中，我们看下什么地方会从队列中获取任务然后进行处理。
         if (task instanceof AbstractExecuteTask) {
             putTask((Runnable) task);
         }
@@ -74,6 +76,8 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
     
     private void putTask(Runnable task) {
         try {
+
+            // 将任务放到队列中
             queue.put(task);
         } catch (InterruptedException ire) {
             log.error(ire.toString(), ire);
@@ -99,6 +103,9 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
     
     /**
      * Inner execute worker.
+     * 在TaskExecuteWorker的构造方法中会创建InnerWorker线程，并调用其start方法.
+     * 在这个方法中就不断从队列中取出任务然后执行任务，这里会调用task的run方法，
+     * 之前我们已经知道任务被封装成DistroHttpCombinedKeyExecuteTask.
      */
     private class InnerWorker extends Thread {
         
@@ -111,10 +118,17 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
         public void run() {
             while (!closed.get()) {
                 try {
+
+                    // 从队列中取出任务
                     Runnable task = queue.take();
+
                     long begin = System.currentTimeMillis();
+                    // 执行任务
+                    // 任务被封装成DistroHttpCombinedKeyExecuteTask，看下
                     task.run();
                     long duration = System.currentTimeMillis() - begin;
+
+                    // 任务耗时
                     if (duration > 1000L) {
                         log.warn("task {} takes {}ms", task, duration);
                     }

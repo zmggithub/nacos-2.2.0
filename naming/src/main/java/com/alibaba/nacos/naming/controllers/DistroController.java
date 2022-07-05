@@ -75,7 +75,12 @@ public class DistroController {
             Loggers.DISTRO.error("[onSync] receive empty entity!");
             throw new NacosException(NacosException.INVALID_PARAM, "receive empty entity!");
         }
-        
+
+        /*
+         * 遍历map，判断key是不是临时数据的key，如果是的话，根据key解析出来namespace和serviceName
+         * 去serviceManager注册表中看有没有这个服务，如果没有创建一个空的,一会异步更新进去
+         * 调用DistroProtocol#onReceive处理数据.
+         */
         for (Map.Entry<String, Datum<Instances>> entry : dataMap.entrySet()) {
             if (KeyBuilder.matchEphemeralInstanceListKey(entry.getKey())) {
                 String namespaceId = KeyBuilder.getNamespace(entry.getKey());

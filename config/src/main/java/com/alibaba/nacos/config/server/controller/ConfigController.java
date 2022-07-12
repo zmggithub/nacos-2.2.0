@@ -86,7 +86,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Special controller for soft load client to publish data.
+ * Special controller for soft load client to publish data 软负载客户端发布数据的专用控制器.
  *
  * @author leiwen
  */
@@ -104,7 +104,7 @@ public class ConfigController {
     
     @Autowired
     private ConfigServletInner inner;
-    
+
     @Autowired
     private PersistService persistService;
     
@@ -184,7 +184,8 @@ public class ConfigController {
     }
     
     /**
-     * Get configure board information fail.
+     * Get configure board information fail 获取配置板信息失败?.
+     * http Get "/v1/cs/configs".
      *
      * @throws ServletException ServletException.
      * @throws IOException      IOException.
@@ -310,7 +311,7 @@ public class ConfigController {
             LOGGER.warn("invalid probeModify is blank");
             throw new IllegalArgumentException("invalid probeModify");
         }
-        
+
         probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
         
         Map<String, String> clientMd5Map;
@@ -344,6 +345,7 @@ public class ConfigController {
     
     /**
      * Query the configuration information and return it in JSON format.
+     * Example: [IP]/nacos/v1/cs/configs?dataId=&group=&appName=&config_tags=&pageNo=1&pageSize=10&tenant=k-gateway&search=accurate.
      */
     @GetMapping(params = "search=accurate")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)

@@ -60,8 +60,9 @@ public class NamespaceController {
     private static final int NAMESPACE_ID_MAX_LENGTH = 128;
     
     private static final String DEFAULT_NAMESPACE = "public";
-    
-    private static final int DEFAULT_QUOTA = 200;
+
+    // 命名空间的默认文件数量
+    private static final int DEFAULT_QUOTA = 9527;
     
     private static final String DEFAULT_CREATE_SOURCE = "nacos";
     

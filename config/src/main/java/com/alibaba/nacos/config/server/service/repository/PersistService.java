@@ -1114,7 +1114,8 @@ public interface PersistService {
     ConfigAdvanceInfo findConfigAdvanceInfo(final String dataId, final String group, final String tenant);
     
     /**
-     * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.
+     * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation
+     * 查询配置信息；数据库原子操作，最小化SQL动作，无业务封装.
      *
      * @param dataId dataId
      * @param group  group

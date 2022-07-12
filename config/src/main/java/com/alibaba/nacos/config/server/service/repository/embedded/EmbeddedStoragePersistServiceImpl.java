@@ -89,6 +89,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
  * For Apache Derby.
+ * Apache Derby是Apache软件基金会所研发的开放源码数据库管理系统.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -893,7 +894,15 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE id=?";
         return databaseOperate.queryOne(sql, new Object[] {id}, CONFIG_INFO_ROW_MAPPER);
     }
-    
+
+    /**
+     * 根据dataId和group查询beta配置信息.
+     *
+     * @param dataId data id
+     * @param group  group
+     * @param tenant tenant
+     * @return {@link ConfigInfo4Beta}
+     */
     @Override
     public ConfigInfoWrapper findConfigInfo(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;

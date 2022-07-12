@@ -49,7 +49,7 @@ public class NacosConfigServiceTest {
     @Before
     public void mock() throws Exception {
         final Properties properties = new Properties();
-        properties.put("serverAddr", "1.1.1.1");
+        properties.put("serverAddr", "127.0.0.1");
         nacosConfigService = new NacosConfigService(properties);
         mockWoker = Mockito.mock(ClientWorker.class);
         setFinal(NacosConfigService.class.getDeclaredField("worker"), nacosConfigService, mockWoker);
@@ -166,11 +166,11 @@ public class NacosConfigServiceTest {
     
     @Test
     public void testPublishConfigCas() throws NacosException {
-        String dataId = "1";
-        String group = "2";
+        String dataId = "nacos.cfg.dataId";
+        String group = "test";
         String content = "123";
         String namespace = "";
-        String casMd5 = "96147704e3cb8be8597d55d75d244a02";
+        String casMd5 = "1a833da63a6b7e20098dae06d06602e1";
         String type = ConfigType.getDefaultType().getType();
         
         Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content, null, casMd5, type))

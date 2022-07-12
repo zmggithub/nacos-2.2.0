@@ -54,7 +54,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 
 /**
- * LongPollingService.
+ * LongPollingService 长轮询服务.
  *
  * @author Nacos
  */

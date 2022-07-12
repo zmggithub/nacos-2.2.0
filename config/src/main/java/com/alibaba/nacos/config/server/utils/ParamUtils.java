@@ -48,7 +48,7 @@ public class ParamUtils {
     
     /**
      * Whitelist checks that valid parameters can only contain letters, Numbers, and characters in validChars, and
-     * cannot be empty.
+     * cannot be empty 白名单检查有效参数在有效字符中只能包含字母、数字和字符，不能为空.
      */
     public static boolean isValid(String param) {
         if (param == null) {

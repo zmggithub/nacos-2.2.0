@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Addressable pattern base class.
+ * Addressable pattern base class 可寻址模式基类.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

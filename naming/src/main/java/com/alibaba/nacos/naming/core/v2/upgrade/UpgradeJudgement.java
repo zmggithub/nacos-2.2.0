@@ -56,12 +56,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     
     /**
-     * Only when all cluster upgrade upper 2.0.0, this features is true.
+     * 只有当所有集群都升级到 2.0.0 以上时，这个特性才是true.
      */
     private final AtomicBoolean useGrpcFeatures = new AtomicBoolean(false);
     
     /**
-     * Only when all cluster upgrade upper 1.4.0, this features is true.
+     * 仅当所有集群升级到 1.4.0 以上时，这个特性才是true.
      */
     private final AtomicBoolean useJraftFeatures = new AtomicBoolean(false);
     

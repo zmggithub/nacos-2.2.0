@@ -68,7 +68,7 @@ import java.util.Map;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME;
 
 /**
- * Instance operation controller.
+ * Instance operation controller 实例操作.
  *
  * @author nkorange
  */
@@ -357,7 +357,7 @@ public class InstanceController {
     }
     
     /**
-     * Create a beat for instance.
+     * Create a beat for instance 为实例创建一个心跳?.
      *
      * @param request http request
      * @return detail information of instance

@@ -57,14 +57,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * A consistency protocol algorithm called <b>Distro</b>
+ * A consistency protocol algorithm called 一致性协议算法叫Distro <b>Distro</b>
  *
  * <p>Use a distro algorithm to divide data into many blocks. Each Nacos server node takes responsibility for exactly
  * one block of data. Each block of data is generated, removed and synchronized by its responsible server. So every
- * Nacos server only handles writings for a subset of the total service data.
+ * Nacos server only handles writings for a subset of the total service data使用发行版算法将数据分成许多块.每个Nacos服务器节点只负责一个数据块.
+ * 每个数据块都由其负责的服务器生成、删除和同步.所以每个Nacos服务器只处理总服务数据的一个子集的写入.
  *
  * <p>At mean time every Nacos server receives data sync of other Nacos server, so every Nacos server will eventually
- * have a complete set of data.
+ * have a complete set of data 同时每台Nacos服务器都接收到其他Nacos服务器的数据同步，所以每台Nacos服务器最终都会拥有一套完整的数据.
  *
  * @author nkorange
  * @since 1.0.0
@@ -103,6 +104,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     @PostConstruct
     public void init() {
+        // Notifier在这被加载的... 主要是执行监听器
         GlobalExecutor.submitDistroNotifyTask(notifier);
     }
     
@@ -151,7 +153,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         if (!listeners.containsKey(key)) {
             return;
         }
-        
+
+        // 相当于发布事件
         notifier.addTask(key, DataOperation.CHANGE);
     }
     
@@ -246,6 +249,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     private boolean processData(byte[] data) throws Exception {
         if (data.length > 0) {
+            // 反序列化
             Map<String, Datum<Instances>> datumMap = serializer.deserializeMap(data, Instances.class);
             
             for (Map.Entry<String, Datum<Instances>> entry : datumMap.entrySet()) {
@@ -302,8 +306,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     @Override
     public boolean processData(DistroData distroData) {
-        // 首先对数据进行反序列化
 
+        // 首先对数据进行反序列化
         DistroHttpData distroHttpData = (DistroHttpData) distroData;
         Datum<Instances> datum = (Datum<Instances>) distroHttpData.getDeserializedContent();
 
@@ -411,7 +415,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         public int getTaskSize() {
             return tasks.size();
         }
-        
+
+        // Notifier什么时候加载的？会一直执行此方法处理 BlockingQueue.tasks.take()
         @Override
         public void run() {
             Loggers.DISTRO.info("distro notifier started");

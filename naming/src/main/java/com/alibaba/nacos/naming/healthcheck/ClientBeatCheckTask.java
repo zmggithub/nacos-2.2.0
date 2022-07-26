@@ -81,7 +81,7 @@ public class ClientBeatCheckTask implements BeatCheckTask {
     @Override
     public void run() {
         try {
-            // If upgrade to 2.0.X stop health check with v1
+            // If upgrade to 2.0.X stop health check with v1 如果升级到 2.0.X 停止使用 v1 进行健康检查
             if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
                 return;
             }

@@ -24,7 +24,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 /**
  * Nacos starter.
  * 单机：-Dnacos.standalone=true
- * 集群：-Dserver.port=8846 -Dnacos.home=C:\Users\zmg\nacos\8846.
+ * 集群：-Dserver.port=8846 -Dnacos.home=%LOCALPATH% @Link{MemberLookup_ITCase.java} .
  *
  * @author nacos
  */

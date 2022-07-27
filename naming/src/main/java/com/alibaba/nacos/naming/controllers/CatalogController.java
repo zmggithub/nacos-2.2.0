@@ -129,6 +129,7 @@ public class CatalogController {
     
     /**
      * List service detail information.
+     * 服务列表中的列表方法：/nacos/v1/ns/catalog/services.
      *
      * @param withInstances     whether return instances
      * @param namespaceId       namespace id

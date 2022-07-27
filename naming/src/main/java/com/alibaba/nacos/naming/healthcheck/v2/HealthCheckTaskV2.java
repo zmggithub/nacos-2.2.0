@@ -35,6 +35,7 @@ import java.util.Optional;
 
 /**
  * Health check task for v2.x.
+ * HealthCheckTaskV2 在执行健康检查过程中会使用 HealthCheckProcessorV2Delegate 对任务进行处理.
  *
  * <p>Current health check logic is same as v1.x. TODO refactor health check for v2.x.
  *

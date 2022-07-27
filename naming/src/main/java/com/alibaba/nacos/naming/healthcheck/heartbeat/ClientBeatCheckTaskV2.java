@@ -29,7 +29,9 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import java.util.Collection;
 
 /**
- * Client beat check task of service for version 2.x.
+ * Client beat check task of service for version 2.x服务的客户端节拍检查任务.
+ * 在执行健康检查过程中会使用InstanceBeatCheckTask,这个将要进行的任务是InstanceBeatCheckTask它内部维护了一个Checker列表，用于添加额外的检查器;
+ * InterceptorChain中的拦截器列表对将要进行的任务进行拦截处理.
  *
  * @author nkorange
  */

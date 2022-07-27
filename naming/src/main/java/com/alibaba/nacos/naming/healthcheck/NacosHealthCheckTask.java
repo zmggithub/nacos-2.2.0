@@ -19,7 +19,9 @@ package com.alibaba.nacos.naming.healthcheck;
 import com.alibaba.nacos.naming.interceptor.Interceptable;
 
 /**
- * Nacos health check task.
+ * Nacos health check task 负责执行健康检查的任务,
+ * 目前有两种实现 ClientBeatCheckTaskV2 和 HealthCheckTaskV2
+ * 前者处理心跳相关的状态，后者处理各种连接的状态.
  *
  * @author xiweng.yy
  */

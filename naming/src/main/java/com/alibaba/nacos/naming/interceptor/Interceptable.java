@@ -17,7 +17,8 @@
 package com.alibaba.nacos.naming.interceptor;
 
 /**
- * Interceptable Interface.
+ * Interceptable Interface 定义了对拦截操作相关的执行方法，被拦截对象的业务逻辑需要由拦截器负责调度.
+ * passIntercept()在未被拦截的时候需要执行，afterIntercept()在被拦截之后需要执行.
  *
  * @author xiweng.yy
  */

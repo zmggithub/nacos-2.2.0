@@ -35,14 +35,18 @@ import java.util.Optional;
 
 /**
  * Health check task for v2.x.
- * HealthCheckTaskV2 在执行健康检查过程中会使用 HealthCheckProcessorV2Delegate 对任务进行处理.
+ * v2版本的健康检查，在执行健康检查过程中会使用 HealthCheckProcessorV2Delegate 对任务进行处理.
  *
  * <p>Current health check logic is same as v1.x. TODO refactor health check for v2.x.
  *
  * @author nacos
  */
 public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealthCheckTask {
-    
+
+    /**
+     * 一个客户端对象（此客户端代表提供服务用于被应用访问的客户端）
+     * 从这里可以看出，启动一个健康检查任务是以客户端为维度的
+     */
     private final IpPortBasedClient client;
     
     private final String taskId;
@@ -52,17 +56,35 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
     private final NamingMetadataManager metadataManager;
     
     private long checkRtNormalized = -1;
-    
+
+    /**
+     * 检查最佳响应时间
+     */
     private long checkRtBest = -1;
-    
+
+    /**
+     * 检查最差响应时间
+     */
     private long checkRtWorst = -1;
-    
+
+    /**
+     * 检查上次响应时间
+     */
     private long checkRtLast = -1;
-    
+
+    /**
+     * 检查上上次响应时间
+     */
     private long checkRtLastLast = -1;
-    
+
+    /**
+     * 开始时间
+     */
     private long startTime;
-    
+
+    /**
+     * 任务是否取消
+     */
     private volatile boolean cancelled = false;
     
     public HealthCheckTaskV2(IpPortBasedClient client) {
@@ -70,6 +92,8 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
         this.taskId = client.getResponsibleId();
         this.switchDomain = ApplicationUtils.getBean(SwitchDomain.class);
         this.metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
+
+        // 初始化响应时间检查
         initCheckRT();
     }
     
@@ -77,7 +101,9 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
         // first check time delay
         checkRtNormalized =
                 2000 + RandomUtils.nextInt(0, RandomUtils.nextInt(0, switchDomain.getTcpHealthParams().getMax()));
+        // 最佳响应时间
         checkRtBest = Long.MAX_VALUE;
+        // 最差响应时间为0
         checkRtWorst = 0L;
     }
     
@@ -89,14 +115,22 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
     public String getTaskId() {
         return taskId;
     }
-    
+
+    /**
+     * 开始执行健康检查任务
+     */
     @Override
     public void doHealthCheck() {
         try {
+            // 获取当前传入的Client所发布的所有Service，并遍历
             for (Service each : client.getAllPublishedService()) {
+                // 只有当Service开启了健康检查才执行
                 if (switchDomain.isHealthCheckEnabled(each.getGroupedServiceName())) {
+                    // 获取Service对应的InstancePublishInfo
                     InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(each);
+                    // 获取集群元数据
                     ClusterMetadata metadata = getClusterMetadata(each, instancePublishInfo);
+                    // 使用Processor代理对象对任务进行处理
                     ApplicationUtils.getBean(HealthCheckProcessorV2Delegate.class).process(this, each, metadata);
                     if (Loggers.EVT_LOG.isDebugEnabled()) {
                         Loggers.EVT_LOG.debug("[HEALTH-CHECK-V2] schedule health check task: {}", client.getClientId());

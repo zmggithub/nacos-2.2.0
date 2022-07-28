@@ -20,7 +20,7 @@ import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
 import com.alibaba.nacos.naming.interceptor.NacosNamingInterceptor;
 
 /**
- * Abstract health check interceptor.
+ * Abstract health check interceptor 健康检查的抽象拦截器 定义了它的子类将要处理的任务类型为NacosHealthCheckTask.
  *
  * @author xiweng.yy
  */

@@ -961,7 +961,7 @@ class ConfigurationManagement extends React.Component {
       token = JSON.parse(localStorage.token);
     } catch (e) {
       console.log(e);
-      goLogin();
+      // goLogin();
     }
     const { accessToken = '', username = '' } = token;
     const uploadProps = {

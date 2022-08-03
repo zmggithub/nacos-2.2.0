@@ -25,7 +25,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 /**
- * abstract rpc server .
+ * abstract rpc server Server启动.
  *
  * @author liuzunfei
  * @version $Id: BaseRpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $

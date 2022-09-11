@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 
 /**
- * External dump service.
+ * External dump service 外部转储服务.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

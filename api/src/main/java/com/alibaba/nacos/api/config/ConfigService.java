@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
- * Config Service Interface.
+ * Config Service Interface 配置服务接口.
  *
  * @author Nacos
  */

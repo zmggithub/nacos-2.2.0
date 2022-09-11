@@ -40,7 +40,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Embedded dump service.
+ * Embedded dump service 嵌入转储服务.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

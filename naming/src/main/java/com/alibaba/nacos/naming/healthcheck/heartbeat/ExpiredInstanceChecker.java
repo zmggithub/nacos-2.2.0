@@ -36,7 +36,8 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import java.util.Optional;
 
 /**
- * Instance beat checker for expired instance.
+ * Instance beat checker for expired instance 已过期的实例检查器.
+ * 用于检查实例是否过期，若过期则从已发布列表内部移除该服务.
  *
  * <p>Delete the instance if has expired.
  *
@@ -46,6 +47,8 @@ public class ExpiredInstanceChecker implements InstanceBeatChecker {
     
     @Override
     public void doCheck(Client client, Service service, HealthCheckInstancePublishInfo instance) {
+
+        // 是否已过期
         boolean expireInstance = ApplicationUtils.getBean(GlobalConfig.class).isExpireInstance();
         if (expireInstance && isExpireInstance(service, instance)) {
             deleteIp(client, service, instance);

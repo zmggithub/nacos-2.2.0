@@ -80,7 +80,7 @@ public class ConfigCacheService {
     }
     
     /**
-     * Save config file and update md5 value in cache.
+     * Save config file and update md5 value in cache 保存配置文件并更新缓存中的 md5 值.
      *
      * @param dataId         dataId string value.
      * @param group          group string value.

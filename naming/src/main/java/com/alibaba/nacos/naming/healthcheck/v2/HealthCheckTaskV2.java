@@ -36,6 +36,9 @@ import java.util.Optional;
 /**
  * Health check task for v2.x.
  * v2版本的健康检查，在执行健康检查过程中会使用 HealthCheckProcessorV2Delegate 对任务进行处理.
+ * 继承了AbstractExecuteTask说明会立即执行，实现了NacosHealthCheckTask说明可被拦截器拦截处理，
+ * 前面章节已经分析过NacosHealthCheckTask的相关拦截器只是用于检查是否开启了健康检查以及是否是当前节点处理的判断。
+ * 根据实际的执行逻辑来看，健康检查任务将会循环执行。看类中的注释目前还是采用和v1相同的处理逻辑，待后续版本更新之后看看会有什么区别.
  *
  * <p>Current health check logic is same as v1.x. TODO refactor health check for v2.x.
  *
@@ -98,9 +101,9 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
     }
     
     private void initCheckRT() {
-        // first check time delay
-        checkRtNormalized =
-                2000 + RandomUtils.nextInt(0, RandomUtils.nextInt(0, switchDomain.getTcpHealthParams().getMax()));
+
+        // first check time delay  2000 + (在5000以内的随机数)
+        checkRtNormalized = 2000 + RandomUtils.nextInt(0, RandomUtils.nextInt(0, switchDomain.getTcpHealthParams().getMax()));
         // 最佳响应时间
         checkRtBest = Long.MAX_VALUE;
         // 最差响应时间为0
@@ -140,6 +143,8 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
         } catch (Throwable e) {
             Loggers.SRV_LOG.error("[HEALTH-CHECK-V2] error while process health check for {}", client.getClientId(), e);
         } finally {
+
+            // 若任务执行状态为已取消，则再次启动
             if (!cancelled) {
                 HealthCheckReactor.scheduleCheck(this);
                 // worst == 0 means never checked
@@ -162,18 +167,24 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
     
     @Override
     public void passIntercept() {
+
+        // 拦截通过之后执行健康检查
         doHealthCheck();
     }
     
     @Override
     public void afterIntercept() {
         if (!cancelled) {
+
+            // 拦截器执行完毕之后，若当前任务终止了，则再次进行检查，由此可见其是循环执行的，循环是依赖拦截器的调用逻辑来实现。
             HealthCheckReactor.scheduleCheck(this);
         }
     }
     
     @Override
     public void run() {
+
+        // 调用健康检查
         doHealthCheck();
     }
     

@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Listener Management.
+ * Listener Management 监听管理.
  *
  * @author Nacos
  */

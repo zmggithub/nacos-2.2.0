@@ -71,7 +71,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
- * Dump data service.
+ * Dump data service 转储数据服务.
  *
  * @author Nacos
  */

@@ -32,7 +32,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import java.util.Objects;
 
 /**
- * dump processor.
+ * dump processor 转储处理器.
  *
  * @author Nacos
  * @date 2020/7/5 12:19 PM

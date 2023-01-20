@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Instance request handler.
- *
+ * Rpc Handler 注册registry 处理类
  * @author xiweng.yy
  */
 @Component
@@ -42,7 +42,8 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     public InstanceRequestHandler(EphemeralClientOperationServiceImpl clientOperationService) {
         this.clientOperationService = clientOperationService;
     }
-    
+
+    // 客户端注册实例时接收grpc发送数据的处理Handler
     @Override
     @Secured(action = ActionTypes.WRITE, parser = NamingResourceParser.class)
     public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {

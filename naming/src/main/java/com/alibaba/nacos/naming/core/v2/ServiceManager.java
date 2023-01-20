@@ -57,6 +57,8 @@ public class ServiceManager {
      * @return if service is exist, return exist service, otherwise return new service
      */
     public Service getSingleton(Service service) {
+
+        //TODO 为什么要put 再 get呢？
         singletonRepository.putIfAbsent(service, service);
         Service result = singletonRepository.get(service);
         namespaceSingletonMaps.computeIfAbsent(result.getNamespace(), (namespace) -> new ConcurrentHashSet<>());

@@ -44,7 +44,8 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     public EphemeralClientOperationServiceImpl(ClientManagerDelegate clientManager) {
         this.clientManager = clientManager;
     }
-    
+
+    // 客户端注册实例时接收grpc发送数据的处理实现类
     @Override
     public void registerInstance(Service service, Instance instance, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);

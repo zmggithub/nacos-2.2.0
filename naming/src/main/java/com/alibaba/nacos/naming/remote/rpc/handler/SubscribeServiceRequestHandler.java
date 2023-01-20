@@ -38,7 +38,7 @@ import com.alibaba.nacos.naming.web.NamingResourceParser;
 import org.springframework.stereotype.Component;
 
 /**
- * Handler to handle subscribe service.
+ * Handler to handle subscribe service //todo.
  *
  * @author liuzunfei
  * @author xiweng.yy
@@ -71,6 +71,8 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         Service service = Service.newService(namespaceId, groupName, serviceName, true);
         Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app,
                 meta.getClientIp(), namespaceId, groupedServiceName, 0, request.getClusters());
+
+        // todo
         ServiceInfo serviceInfo = handleClusterData(serviceStorage.getData(service),
                 metadataManager.getServiceMetadata(service).orElse(null),
                 subscriber);

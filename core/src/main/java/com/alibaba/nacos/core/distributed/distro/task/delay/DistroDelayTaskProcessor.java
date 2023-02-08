@@ -40,10 +40,7 @@ public class DistroDelayTaskProcessor implements NacosTaskProcessor {
         this.distroTaskEngineHolder = distroTaskEngineHolder;
         this.distroComponentHolder = distroComponentHolder;
     }
-
-    // 这里又会封装成DistroSyncChangeTask，然后交给Worker线程执行，
-    // 我们之前分析过，在worker处理的时候会调用taks#run方法，所以我们看下DistroSyncChangeTask#run
-
+    
     @Override
     public boolean process(NacosTask task) {
         if (!(task instanceof DistroDelayTask)) {
@@ -56,13 +53,9 @@ public class DistroDelayTaskProcessor implements NacosTaskProcessor {
                 DistroSyncDeleteTask syncDeleteTask = new DistroSyncDeleteTask(distroKey, distroComponentHolder);
                 distroTaskEngineHolder.getExecuteWorkersManager().addTask(distroKey, syncDeleteTask);
                 return true;
-                // change?
             case CHANGE:
-
             case ADD:
-                // 封装同步改变任务
                 DistroSyncChangeTask syncChangeTask = new DistroSyncChangeTask(distroKey, distroComponentHolder);
-                // 交给worker执行
                 distroTaskEngineHolder.getExecuteWorkersManager().addTask(distroKey, syncChangeTask);
                 return true;
             default:

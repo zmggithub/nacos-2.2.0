@@ -17,10 +17,8 @@
 package com.alibaba.nacos.naming.interceptor;
 
 /**
- * Nacos naming interceptor chain 调度者主要是用来管理拦截器的组织方式，触发拦截器的拦截操作.
- * 整体的构成由 NacosNamingInterceptorChain 定义基本框架，
- *  AbstractNamingInterceptorChain 实现通用逻辑，
- *  HealthCheckInterceptorChain 和 InstanceBeatCheckTaskInterceptorChain 则分别服务于健康检查和心跳检查.
+ * Nacos naming interceptor chain.
+ *
  * @author xiweng.yy
  */
 public interface NacosNamingInterceptorChain<T extends Interceptable> {

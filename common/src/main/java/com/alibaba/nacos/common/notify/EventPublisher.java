@@ -24,16 +24,12 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
- *
- * zmg@2022-07-03
- * 发布者的主要功能就是新增订阅者、通知订阅者,目前有两种类型的发布者分别是
- * {@link com.alibaba.nacos.common.notify.DefaultPublisher }和 {@link com.alibaba.nacos.common.notify.DefaultSharePublisher}
  */
 public interface EventPublisher extends Closeable {
     
     /**
      * Initializes the event publisher.
-     * 初始化事件发布者
+     *
      * @param type       {@link Event >}
      * @param bufferSize Message staging queue size
      */
@@ -41,28 +37,28 @@ public interface EventPublisher extends Closeable {
     
     /**
      * The number of currently staged events.
-     * 当前暂存的事件数量
+     *
      * @return event size
      */
     long currentEventSize();
     
     /**
      * Add listener.
-     * 添加订阅者
+     *
      * @param subscriber {@link Subscriber}
      */
     void addSubscriber(Subscriber subscriber);
     
     /**
      * Remove listener.
-     * 移除订阅者
+     *
      * @param subscriber {@link Subscriber}
      */
     void removeSubscriber(Subscriber subscriber);
     
     /**
      * publish event.
-     * 发布事件
+     *
      * @param event {@link Event}
      * @return publish event is success
      */
@@ -70,7 +66,7 @@ public interface EventPublisher extends Closeable {
     
     /**
      * Notify listener.
-     * 通知订阅者
+     *
      * @param subscriber {@link Subscriber}
      * @param event      {@link Event}
      */

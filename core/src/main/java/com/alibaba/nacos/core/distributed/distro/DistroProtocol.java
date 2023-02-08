@@ -112,8 +112,6 @@ public class DistroProtocol {
      * @param delay     delay time for sync
      */
     public void sync(DistroKey distroKey, DataOperation action, long delay) {
-
-        // 这里会遍历所有成员，然后抛去自己，然后调用syncToTarget方法
         for (Member each : memberManager.allMembersWithoutSelf()) {
             syncToTarget(distroKey, action, each.getAddress(), delay);
         }
@@ -121,7 +119,6 @@ public class DistroProtocol {
     
     /**
      * Start to sync to target server.
-     * 这里他会把节点的地址也封装到DistorKey中，然后包装成一个Task，交给延迟任务引擎来处理.
      *
      * @param distroKey    distro key of sync data
      * @param action       the action of data operation
@@ -129,12 +126,8 @@ public class DistroProtocol {
      * @param delay        delay time for sync
      */
     public void syncToTarget(DistroKey distroKey, DataOperation action, String targetServer, long delay) {
-
-        // 重新封装DistorKey,然后将对方的地址封装进去
         DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(),
                 targetServer);
-
-        // 封装延迟task
         DistroDelayTask distroDelayTask = new DistroDelayTask(distroKeyWithTarget, action, delay);
         distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKeyWithTarget, distroDelayTask);
         if (Loggers.DISTRO.isDebugEnabled()) {
@@ -171,16 +164,12 @@ public class DistroProtocol {
     public boolean onReceive(DistroData distroData) {
         Loggers.DISTRO.info("[DISTRO] Receive distro data type: {}, key: {}", distroData.getType(),
                 distroData.getDistroKey());
-
-        // 首先通过resourceType获取一个DistroDataProcessor
         String resourceType = distroData.getDistroKey().getResourceType();
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == dataProcessor) {
             Loggers.DISTRO.warn("[DISTRO] Can't find data process for received data {}", resourceType);
             return false;
         }
-
-        // 调用DistroDataProcessor#processData方法
         return dataProcessor.processData(distroData);
     }
     

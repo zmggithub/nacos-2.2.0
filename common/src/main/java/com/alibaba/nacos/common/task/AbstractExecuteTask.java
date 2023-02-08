@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.task;
 
 /**
- * Abstract task which should be executed immediately 需要立即执行的任务.
+ * Abstract task which should be executed immediately.
  *
  * @author xiweng.yy
  */

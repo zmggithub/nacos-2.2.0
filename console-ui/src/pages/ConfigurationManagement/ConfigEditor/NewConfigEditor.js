@@ -27,22 +27,18 @@ import {
   Balloon,
   Button,
   Dialog,
-  Field,
   Form,
   Checkbox,
   Icon,
   Input,
   Loading,
   Radio,
-  Switch,
   Select,
   Tab,
   Message,
   Grid,
   ConfigProvider,
 } from '@alifd/next';
-import { resolve } from 'url';
-import qs from 'qs';
 
 const { Row, Col } = Grid;
 
@@ -162,8 +158,7 @@ class ConfigEditor extends React.Component {
         this.setState({
           editorClass: 'editor-full-screen',
         });
-      }
-      if (e.key === 'Escape') {
+      } else if (e.key === 'Escape') {
         this.setState({
           editorClass: 'editor-normal',
         });
@@ -189,11 +184,11 @@ class ConfigEditor extends React.Component {
 
   openDiff(cbName) {
     this.diffcb = cbName;
-    let leftvalue = this.monacoEditor.getValue();
-    let rightvalue = this.codeVal || '';
-    leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-    rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-    this.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
+    let leftValue = this.monacoEditor.getValue();
+    let rightValue = this.codeVal || '';
+    leftValue = leftValue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+    rightValue = rightValue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+    this.diffEditorDialog.current.getInstance().openDialog(leftValue, rightValue);
   }
 
   clickTab(tabActiveKey) {
@@ -235,7 +230,7 @@ class ConfigEditor extends React.Component {
     if (validateContent.validate({ content, type })) {
       return this._publishConfig();
     } else {
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
         Dialog.confirm({
           content: locale.codeValErrorPrompt,
           onOk: () => resolve(this._publishConfig()),
@@ -251,7 +246,7 @@ class ConfigEditor extends React.Component {
     if (beta) {
       headers.betaIps = betaIps;
     }
-    const form = { ...this.state.form, content: this.getCodeVal() };
+    const form = { ...this.state.form, content: this.getCodeVal(), betaIps };
     const payload = {};
     Object.keys(form).forEach(key => {
       payload[key] = form[key];
@@ -267,16 +262,26 @@ class ConfigEditor extends React.Component {
       method: 'post',
       data: stringify(payload),
       headers,
-    }).then(res => {
-      if (res) {
-        if (isNewConfig) {
-          this.setState({ isNewConfig: false });
+    }).then(
+      res => {
+        if (res) {
+          if (isNewConfig) {
+            this.setState({ isNewConfig: false });
+          }
+          this.getConfig(beta);
         }
-        this.getConfig(beta);
+        this.setState({ loading: false });
+        return res;
+      },
+      error => {
+        this.setState({ loading: false });
+        if (error.status && error.status === 403) {
+          Dialog.alert({
+            content: this.props.locale.publishFailed403,
+          });
+        }
       }
-      this.setState({ loading: false });
-      return res;
-    });
+    );
   }
 
   publishBeta() {
@@ -292,7 +297,6 @@ class ConfigEditor extends React.Component {
   }
 
   stopBeta() {
-    const { locale } = this.props;
     const { dataId, group } = this.state.form;
     const tenant = getParams('namespace');
     return request
@@ -377,8 +381,7 @@ class ConfigEditor extends React.Component {
     };
     if (beta) {
       params.beta = true;
-    }
-    if (!beta) {
+    } else {
       params.show = 'all';
     }
     return request.get('v1/cs/configs', { params }).then(res => {
@@ -490,7 +493,7 @@ class ConfigEditor extends React.Component {
             </Tab>
           )}
           <Form className="new-config-form" {...formItemLayout}>
-            <Form.Item label="Data ID:" required {...dataIdError}>
+            <Form.Item label="Data ID" required {...dataIdError}>
               <Input
                 value={form.dataId}
                 onChange={dataId =>
@@ -499,7 +502,7 @@ class ConfigEditor extends React.Component {
                 disabled={!isNewConfig}
               />
             </Form.Item>
-            <Form.Item label="Group:" required {...groupError}>
+            <Form.Item label="Group" required {...groupError}>
               <Input
                 value={form.group}
                 onChange={group =>
@@ -595,7 +598,7 @@ class ConfigEditor extends React.Component {
                 </div>
               }
             >
-              <div id="container" className={editorClass} style={{ height: 450 }} />
+              <div id="container" className={editorClass} style={{ minHeight: 450 }} />
             </Form.Item>
           </Form>
           <Row>

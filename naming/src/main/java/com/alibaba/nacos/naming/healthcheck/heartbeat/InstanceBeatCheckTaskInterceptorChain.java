@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.healthcheck.heartbeat;
 import com.alibaba.nacos.naming.interceptor.AbstractNamingInterceptorChain;
 
 /**
- * Instance beat check interceptor chain 实例心跳检查器链负责加载AbstractBeatCheckInterceptor类型的拦截器.
+ * Instance beat check interceptor chain.
  *
  * @author xiweng.yy
  */

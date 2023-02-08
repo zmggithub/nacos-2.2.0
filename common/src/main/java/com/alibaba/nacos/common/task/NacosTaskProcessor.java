@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.task;
 
 /**
- * Task processor 任务处理器.
+ * Task processor.
  *
  * @author Nacos
  */

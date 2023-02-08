@@ -17,7 +17,12 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.DependsOn;
@@ -26,7 +31,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 
 /**
- * External dump service 外部转储服务.
+ * External dump service.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -39,11 +44,15 @@ public class ExternalDumpService extends DumpService {
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
      * initialized ahead of time.
      *
-     * @param persistService {@link PersistService}
-     * @param memberManager  {@link ServerMemberManager}
+     * @param memberManager {@link ServerMemberManager}
      */
-    public ExternalDumpService(PersistService persistService, ServerMemberManager memberManager) {
-        super(persistService, memberManager);
+    public ExternalDumpService(ConfigInfoPersistService configInfoPersistService,
+            CommonPersistService commonPersistService, HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            ConfigInfoAggrPersistService configInfoAggrPersistService,
+            ConfigInfoBetaPersistService configInfoBetaPersistService,
+            ConfigInfoTagPersistService configInfoTagPersistService, ServerMemberManager memberManager) {
+        super(configInfoPersistService, commonPersistService, historyConfigInfoPersistService,
+                configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService, memberManager);
     }
     
     @PostConstruct

@@ -20,14 +20,14 @@ import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
- * Config Service Interface 配置服务接口.
+ * Config Service Interface.
  *
  * @author Nacos
  */
 public interface ConfigService {
     
     /**
-     * Get config 获取配置配置.
+     * Get config.
      *
      * @param dataId    dataId
      * @param group     group
@@ -38,7 +38,7 @@ public interface ConfigService {
     String getConfig(String dataId, String group, long timeoutMs) throws NacosException;
     
     /**
-     * Get config and register Listener 获取配置同时添加Listener，用于监听变更事件.
+     * Get config and register Listener.
      *
      * <p>If you want to pull it yourself when the program starts to get the configuration for the first time, and the
      * registered Listener is used for future configuration updates, you can keep the original code unchanged, just add
@@ -59,8 +59,7 @@ public interface ConfigService {
      * Add a listener to the configuration, after the server modified the configuration, the client will use the
      * incoming listener callback. Recommended asynchronous processing, the application can implement the getExecutor
      * method in the ManagerListener, provide a thread pool of execution. If not provided, use the main thread callback, May
-     * block other configurations or be blocked by other configurations
-     * 添加Listener，用于监听变更事件.
+     * block other configurations or be blocked by other configurations.
      *
      * @param dataId   dataId
      * @param group    group
@@ -70,7 +69,7 @@ public interface ConfigService {
     void addListener(String dataId, String group, Listener listener) throws NacosException;
     
     /**
-     * Publish config 发布配置.
+     * Publish config.
      *
      * @param dataId  dataId
      * @param group   group
@@ -82,7 +81,7 @@ public interface ConfigService {
     
     
     /**
-     * Publish config 发布配置.
+     * Publish config.
      *
      * @param dataId  dataId
      * @param group   group
@@ -94,7 +93,7 @@ public interface ConfigService {
     boolean publishConfig(String dataId, String group, String content, String type) throws NacosException;
     
     /**
-     * Cas Publish config 比较 发布配置.
+     * Cas Publish config.
      *
      * @param dataId  dataId
      * @param group   group
@@ -106,7 +105,7 @@ public interface ConfigService {
     boolean publishConfigCas(String dataId, String group, String content, String casMd5) throws NacosException;
     
     /**
-     * Cas Publish config 比较 发布配置.
+     * Cas Publish config.
      *
      * @param dataId  dataId
      * @param group   group
@@ -120,7 +119,7 @@ public interface ConfigService {
             throws NacosException;
     
     /**
-     * Remove config 移除配置.
+     * Remove config.
      *
      * @param dataId dataId
      * @param group  group
@@ -130,7 +129,7 @@ public interface ConfigService {
     boolean removeConfig(String dataId, String group) throws NacosException;
     
     /**
-     * Remove listener 移除监听.
+     * Remove listener.
      *
      * @param dataId   dataId
      * @param group    group
@@ -139,14 +138,14 @@ public interface ConfigService {
     void removeListener(String dataId, String group, Listener listener);
     
     /**
-     * Get server status 获取Server状态 UP or DOWN.
+     * Get server status.
      *
      * @return whether health
      */
     String getServerStatus();
     
     /**
-     * Shutdown the resource service 关闭Server服务.
+     * Shutdown the resource service.
      *
      * @throws NacosException exception.
      */

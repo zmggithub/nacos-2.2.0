@@ -26,7 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Instance beat check task 实例心跳检查任务.
+ * Instance beat check task.
  *
  * @author xiweng.yy
  */

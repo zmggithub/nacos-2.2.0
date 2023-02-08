@@ -51,10 +51,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Grpc implementation as a rpc server.
- * server启动过程中主要干了三件事
- * 1定义了拦截器获取客户端的ip、port、connectId等；
- * 2装配了.proto定义的两种调用方式，简单调用方式Request#request和双向流调用方式BiRequestStream#biRequestStream；
- * 3设置了服务启动端口、线程、接受消息的限制、压缩/解压缩类型.
  *
  * @author liuzunfei
  * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
@@ -88,12 +84,12 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
     }
-
+    
     @Override
     public void startServer() throws Exception {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
         
-        // server interceptor to set connection id 定义server的拦截器，可以从请求中获取connection id、ip、port等.
+        // server interceptor to set connection id.
         ServerInterceptor serverInterceptor = new ServerInterceptor() {
             @Override
             public <T, S> ServerCall.Listener<T> interceptCall(ServerCall<T, S> call, Metadata headers,
@@ -110,12 +106,9 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 return Contexts.interceptCall(ctx, call, headers, next);
             }
         };
-
-        // 添加处理服务
+        
         addServices(handlerRegistry, serverInterceptor);
-
-        // 设置server启动的端口（默认为 8848 + 1001 = 9849）,getRpcExecutor线程执行器（线程数默认为 = 处理器核数*16）,
-        // maxInboundMessageSize最大限制为10M，压缩解压缩使用gzip.
+        
         server = ServerBuilder.forPort(getServicePort()).executor(getRpcExecutor())
                 .maxInboundMessageSize(getInboundMessageSize()).fallbackHandlerRegistry(handlerRegistry)
                 .compressorRegistry(CompressorRegistry.getDefaultInstance())
@@ -155,8 +148,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                         }
                     }
                 }).build();
-
-        // 注册发现server启动grpc
+        
         server.start();
     }
     
@@ -173,42 +165,32 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     
     private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {
         
-        // unary common call register 构造MethodDescriptor，包括：服务调用方式简单RPC，即UNARY、服务的接口名和方法名、请求序列化类、响应序列化类.
+        // unary common call register.
         final MethodDescriptor<Payload, Payload> unaryPayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder()
-                .setType(MethodDescriptor.MethodType.UNARY) // 服务调用方式UNARY.
-                .setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_SERVICE_NAME, REQUEST_METHOD_NAME)) // 服务的接口名和方法名「request」.
-                .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())) // 请求序列化类.
-                .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build(); // 响应序列化类.
-
-        // 服务接口处理类，接受到request请求将调用执行.
+                .setType(MethodDescriptor.MethodType.UNARY)
+                .setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_SERVICE_NAME, REQUEST_METHOD_NAME))
+                .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
+                .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
+        
         final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
-                .asyncUnaryCall((request, responseObserver) -> {
-                    grpcCommonRequestAcceptor.request(request, responseObserver);
-                });
-
-        // 构建暴露的服务「Request」.
+                .asyncUnaryCall((request, responseObserver) -> grpcCommonRequestAcceptor.request(request, responseObserver));
+        
         final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(REQUEST_SERVICE_NAME)
                 .addMethod(unaryPayloadMethod, payloadHandler).build();
-
-        // 注册到内部的注册中心（Registry）中，可以根据服务定义信息查询实现类（普通对象request/response调用）.
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
         
-        // bi stream register双流寄存器,服务接口处理类，接收到biRequestStream请求将调用执行.
+        // bi stream register.
         final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls.asyncBidiStreamingCall(
                 (responseObserver) -> grpcBiStreamRequestAcceptor.requestBiStream(responseObserver));
-
-        // 构造MethodDescriptor，包括：服务双向流调用方式BIDI_STREAMING、服务的接口名和方法名、请求序列化类、响应序列化类.
+        
         final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
                 .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(MethodDescriptor
                         .generateFullMethodName(REQUEST_BI_STREAM_SERVICE_NAME, REQUEST_BI_STREAM_METHOD_NAME))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
-
-        // 构建暴露的服务「BiRequestStream」.
+        
         final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition
                 .builder(REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
-
-        // 注册到内部的注册中心（Registry）中，可以根据服务定义信息查询实现类（双向流调用）.
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
         
     }

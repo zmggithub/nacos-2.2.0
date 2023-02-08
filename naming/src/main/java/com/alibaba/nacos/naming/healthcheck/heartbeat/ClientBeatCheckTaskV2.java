@@ -29,9 +29,7 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import java.util.Collection;
 
 /**
- * Client beat check task of service for version 2.x服务的客户端节拍检查任务.
- * 在执行健康检查过程中会使用InstanceBeatCheckTask,这个将要进行的任务是InstanceBeatCheckTask它内部维护了一个Checker列表，用于添加额外的检查器;
- * InterceptorChain中的拦截器列表对将要进行的任务进行拦截处理.
+ * Client beat check task of service for version 2.x.
  *
  * @author nkorange
  */
@@ -40,10 +38,7 @@ public class ClientBeatCheckTaskV2 extends AbstractExecuteTask implements BeatCh
     private final IpPortBasedClient client;
     
     private final String taskId;
-
-    /**
-     * 拦截器链
-     */
+    
     private final InstanceBeatCheckTaskInterceptorChain interceptorChain;
     
     public ClientBeatCheckTaskV2(IpPortBasedClient client) {
@@ -69,16 +64,10 @@ public class ClientBeatCheckTaskV2 extends AbstractExecuteTask implements BeatCh
     @Override
     public void doHealthCheck() {
         try {
-
-            // 获取所有Service
             Collection<Service> services = client.getAllPublishedService();
             for (Service each : services) {
-
-                // 获取所有Service对应的InstancePublishInfo
                 HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) client
                         .getInstancePublishInfo(each);
-
-                // 创建一个实例心跳检查任务InstanceBeatCheckTask,交由拦截器链处理
                 interceptorChain.doInterceptor(new InstanceBeatCheckTask(client, each, instance));
             }
         } catch (Exception e) {

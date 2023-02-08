@@ -54,8 +54,6 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
     
     @Override
     public void doStart() throws NacosException {
-
-        // 从本地配置文件中读取集群配置
         readClusterConfFromDisk();
         
         // Use the inotify mechanism to monitor file changes and automatically
@@ -73,7 +71,7 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
     }
     
     @Override
-    public void destroy() throws NacosException {
+    protected void doDestroy() throws NacosException {
         WatchFileCenter.deregisterWatcher(EnvUtil.getConfPath(), watcher);
     }
     

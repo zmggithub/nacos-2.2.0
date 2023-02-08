@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Nacos delay task execute engine 延迟任务执行引擎.
+ * Nacos delay task execute engine.
  *
  * @author xiweng.yy
  */
@@ -48,8 +48,6 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
     }
     
     public NacosDelayTaskExecuteEngine(String name, Logger logger) {
-
-        // 初始化task大小为32，100ms执行一次
         this(name, 32, logger, 100L);
     }
     
@@ -106,7 +104,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
     
     @Override
     public Collection<Object> getAllTaskKeys() {
-        Collection<Object> keys = new HashSet<Object>();
+        Collection<Object> keys = new HashSet<>();
         lock.lock();
         try {
             keys.addAll(tasks.keySet());
@@ -121,22 +119,15 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
         tasks.clear();
         processingExecutor.shutdown();
     }
-
+    
     @Override
     public void addTask(Object key, AbstractDelayTask newTask) {
-
-        // 这里就是判断如果任务存在就合并，不存在就添加进去，我们看下什么时候执行任务，肯定会从任务队列中获取任务然后执行.
         lock.lock();
         try {
-            // 先获取
             AbstractDelayTask existTask = tasks.get(key);
-
-            // 如果存在的话，就合并任务
             if (null != existTask) {
                 newTask.merge(existTask);
             }
-
-            // 放到map中去
             tasks.put(key, newTask);
         } finally {
             lock.unlock();
@@ -147,20 +138,12 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
      * process tasks in execute engine.
      */
     protected void processTasks() {
-
-        // 获取所有的task
         Collection<Object> keys = getAllTaskKeys();
-
-        // 遍历
         for (Object taskKey : keys) {
-
-            // 获取任务
             AbstractDelayTask task = removeTask(taskKey);
             if (null == task) {
                 continue;
             }
-
-            // 获取processor
             NacosTaskProcessor processor = getProcessor(taskKey);
             if (null == processor) {
                 getEngineLog().error("processor not found for task, so discarded. " + task);
@@ -168,14 +151,11 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
             }
             try {
                 // ReAdd task if process failed
-                // 如果处理失败的话，就进行重试
                 if (!processor.process(task)) {
                     retryFailedTask(taskKey, task);
                 }
             } catch (Throwable e) {
-                getEngineLog().error("Nacos task execute error : " + e.toString(), e);
-
-                // 重试
+                getEngineLog().error("Nacos task execute error ", e);
                 retryFailedTask(taskKey, task);
             }
         }
@@ -185,11 +165,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
         task.setLastProcessTime(System.currentTimeMillis());
         addTask(key, task);
     }
-
-    /**
-     * 这里会从队列中获取任务，然后根据taskKey去获取对应的processor，
-     * 调用调用process方法，这里匹配到的processor是DistroHttpDelayTaskProcessor.
-     */
+    
     private class ProcessRunnable implements Runnable {
         
         @Override

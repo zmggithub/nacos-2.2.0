@@ -20,18 +20,18 @@ import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.google.common.base.Stopwatch;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.PostConstruct;
 import java.sql.Timestamp;
@@ -60,7 +60,7 @@ public class CapacityService {
     private TenantCapacityPersistService tenantCapacityPersistService;
     
     @Autowired
-    private PersistService persistService;
+    private ConfigInfoPersistService configInfoPersistService;
     
     /**
      * Init.
@@ -69,15 +69,14 @@ public class CapacityService {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public void init() {
         // All servers have jobs that modify usage, idempotent.
-        ConfigExecutor.scheduleCorrectUsageTask(new Runnable() {
-            @Override
-            public void run() {
-                LOGGER.info("[capacityManagement] start correct usage");
-                Stopwatch stopwatch = Stopwatch.createStarted();
-                correctUsage();
-                LOGGER.info("[capacityManagement] end correct usage, cost: {}s", stopwatch.elapsed(TimeUnit.SECONDS));
-                
-            }
+        ConfigExecutor.scheduleCorrectUsageTask(() -> {
+            LOGGER.info("[capacityManagement] start correct usage");
+            StopWatch watch = new StopWatch();
+            watch.start();
+            correctUsage();
+            watch.stop();
+            LOGGER.info("[capacityManagement] end correct usage, cost: {}s", watch.getTotalTimeSeconds());
+            
         }, PropertyUtil.getCorrectUsageDelay(), PropertyUtil.getCorrectUsageDelay(), TimeUnit.SECONDS);
     }
     
@@ -107,6 +106,8 @@ public class CapacityService {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 // ignore
+                // set the interrupted flag
+                Thread.currentThread().interrupt();
             }
         }
     }
@@ -153,9 +154,9 @@ public class CapacityService {
         while (true) {
             List<String> list;
             if (isTenant) {
-                list = persistService.getTenantIdList(page, INIT_PAGE_SIZE);
+                list = configInfoPersistService.getTenantIdList(page, INIT_PAGE_SIZE);
             } else {
-                list = persistService.getGroupIdList(page, INIT_PAGE_SIZE);
+                list = configInfoPersistService.getGroupIdList(page, INIT_PAGE_SIZE);
             }
             for (String targetId : list) {
                 if (isTenant) {
@@ -268,10 +269,9 @@ public class CapacityService {
     private boolean initGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
         boolean insertSuccess = insertGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize);
-        if (quota != null) {
-            return insertSuccess;
+        if (quota == null) {
+            autoExpansion(group, null);
         }
-        autoExpansion(group, null);
         return insertSuccess;
     }
     
